@@ -19,7 +19,7 @@ pub(crate) enum FilterMode {
 }
 
 impl FilterMode {
-    const NAMED_VARIANTS: &[(Self, &'static str)] = &[
+    const NAMED_VARIANTS: &'static [(Self, &'static str)] = &[
         (Self::Greater, "Greater"),
         (Self::GreaterEq, "Greater or Equal"),
         (Self::Less, "Less"),

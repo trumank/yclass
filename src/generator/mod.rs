@@ -23,7 +23,8 @@ pub enum AvailableGenerator {
 }
 
 impl AvailableGenerator {
-    pub const ALL: &[AvailableGenerator] = &[AvailableGenerator::Rust, AvailableGenerator::Cpp];
+    pub const ALL: &'static [AvailableGenerator] =
+        &[AvailableGenerator::Rust, AvailableGenerator::Cpp];
 
     pub fn label(&self) -> &'static str {
         match self {

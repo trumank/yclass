@@ -14,7 +14,7 @@ pub enum FieldKind {
 }
 
 impl FieldKind {
-    pub const NAMED_VARIANTS: &[(FieldKind, &'static str)] = &[
+    pub const NAMED_VARIANTS: &'static [(FieldKind, &'static str)] = &[
         (Self::I8, "I8"),
         (Self::I16, "I16"),
         (Self::I32, "I32"),

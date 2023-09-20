@@ -13,6 +13,7 @@ struct Foo {
 }
 
 fn main() {
+    #[allow(clippy::disallowed_names)]
     let foo = Foo {
         values: repeat_with(|| fastrand::u16(..255))
             .take(10)

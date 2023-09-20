@@ -98,7 +98,7 @@ impl ClassListPanel {
                     let mut action = None;
 
                     fn map_state<'s>(
-                        class: &mut Class,
+                        class: &Class,
                         state: &'s mut ClassEditState,
                     ) -> Option<(&'s mut String, &'s mut bool)> {
                         let ClassEditState {

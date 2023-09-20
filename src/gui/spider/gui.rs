@@ -283,11 +283,7 @@ impl SpiderWindow {
         const DATA_HEIGHT: f32 = 14.;
         ui.style_mut().override_font_id = Some(FontId::monospace(DATA_HEIGHT));
 
-        let Some(address) = self.base_address
-            .value()
-            .and_then(|v| v.ok())
-            .cloned()
-        else {
+        let Some(address) = self.base_address.value().and_then(|v| v.ok()).cloned() else {
             ui.heading("Invalid base address");
             return;
         };
