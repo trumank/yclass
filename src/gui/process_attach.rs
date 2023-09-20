@@ -66,6 +66,7 @@ impl ProcessAttachWindow {
                         for pe in self.processes.iter().filter(|pe| {
                             self.filter.is_empty()
                                 || pe.name.to_lowercase().contains(&self.filter.to_lowercase())
+                                || pe.id.to_string().contains(&self.filter)
                         }) {
                             if ui
                                 .button(
