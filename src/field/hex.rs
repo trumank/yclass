@@ -8,7 +8,7 @@ use eframe::{
     epaint::{text::LayoutJob, Color32},
 };
 use once_cell::unsync::Lazy;
-use std::{cell::RefCell, iter::repeat_with, ops::RangeFrom};
+use std::{borrow::Cow, cell::RefCell, iter::repeat_with, ops::RangeFrom};
 
 struct PreviewState {
     address: usize,
@@ -212,6 +212,71 @@ impl<const N: usize> HexField<N> {
             }
         }
     }
+
+    fn string_view(&self, ui: &mut Ui, ctx: &mut InspectionContext, buf: &[u8; N]) {
+        if N != 8 {
+            return;
+        }
+
+        let address = usize::from_ne_bytes(buf[..].try_into().unwrap());
+        if ctx.process.can_read(address) {
+            let mut str_buf = [0; 0x100];
+            ctx.process.read(address, &mut str_buf);
+
+            enum StrType {
+                Str,
+                WStr,
+            }
+
+            let str = {
+                let len = str_buf
+                    .chunks(2)
+                    .position(|c| !(c[1] == 0 && char::from(c[0]).is_ascii_graphic()))
+                    .unwrap_or(str_buf.len());
+
+                if len > 5 {
+                    let chars = str_buf
+                        .chunks(2)
+                        .map(|c| u16::from_le_bytes(c.try_into().unwrap()))
+                        .take(len)
+                        .collect::<Vec<_>>();
+                    Some((StrType::Str, Cow::Owned(String::from_utf16_lossy(&chars))))
+                } else {
+                    let len = str_buf
+                        .iter()
+                        .position(|c| !char::from(*c).is_ascii_graphic())
+                        .unwrap_or(str_buf.len());
+
+                    if len > 5 {
+                        Some((StrType::WStr, String::from_utf8_lossy(&str_buf[..len])))
+                    } else {
+                        None
+                    }
+                }
+            };
+
+            if let Some((t, str)) = str {
+                let mut job = LayoutJob::default();
+                job.append(
+                    &format!(
+                        "-> {}{str:?}",
+                        match t {
+                            StrType::Str => "",
+                            StrType::WStr => "L",
+                        }
+                    ),
+                    4.,
+                    create_text_format(ctx.is_selected(self.id), Color32::RED),
+                );
+
+                let r = ui.add(Label::new(job).sense(Sense::click()));
+
+                if r.clicked() {
+                    ctx.select(self.id);
+                }
+            }
+        }
+    }
 }
 
 impl<const N: usize> Field for HexField<N> {
@@ -255,6 +320,7 @@ impl<const N: usize> Field for HexField<N> {
             self.int_view(ui, ctx, &buf);
             self.float_view(ui, ctx, &buf);
             self.pointer_view(ui, ctx, &buf, &mut response);
+            self.string_view(ui, ctx, &buf);
         });
 
         ctx.offset += N;
