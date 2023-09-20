@@ -7,6 +7,7 @@ use memflex::external::{ProcessEntry, ProcessIterator};
 
 pub struct ProcessAttachWindow {
     shown: bool,
+    request_focus: bool,
     filter: String,
     processes: Vec<ProcessEntry>,
 }
@@ -16,6 +17,7 @@ impl ProcessAttachWindow {
         Self {
             processes: vec![],
             shown: false,
+            request_focus: false,
             filter: "".to_owned(),
         }
     }
@@ -25,6 +27,7 @@ impl ProcessAttachWindow {
 
         if self.shown {
             self.processes = collect_processes();
+            self.request_focus = true;
         }
     }
 
@@ -45,6 +48,11 @@ impl ProcessAttachWindow {
                         .hint_text("Filter by name")
                         .show(ui)
                         .response;
+
+                    if self.request_focus {
+                        r.request_focus();
+                        self.request_focus = false;
+                    }
 
                     if ui.button("Refresh").clicked() || r.changed() {
                         self.processes = collect_processes();
