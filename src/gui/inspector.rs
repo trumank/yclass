@@ -227,6 +227,6 @@ impl InspectorPanel {
         ui.separator();
         ui.add_space(2.);
 
-        create_change_field_type_group!(ui, response, BLACK, BROWN, Ptr, StrPtr);
+        create_change_field_type_group!(ui, response, BLACK, BROWN, Ptr, StrPtr, WStrPtr);
     }
 }
