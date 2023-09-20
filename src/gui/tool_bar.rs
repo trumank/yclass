@@ -5,27 +5,10 @@ use crate::{
     state::{GlobalState, StateRef},
 };
 use eframe::{
-    egui::{style::Margin, Button, Context, Frame, RichText, TopBottomPanel, Ui, WidgetText},
-    epaint::{vec2, Color32, Rounding},
+    egui::{style::Margin, Button, Context, Frame, TopBottomPanel, Ui, WidgetText},
+    epaint::Rounding,
 };
 use memflex::external::ProcessIterator;
-
-macro_rules! create_change_field_type_group {
-    ($ui:ident, $r:ident, $fg:ident, $bg:ident, $($size:ident),*) => {
-        $(
-            if $ui
-                .add_sized(
-                    vec2(24., $ui.available_height()),
-                    Button::new(RichText::new(concat!(stringify!($size))).color(Color32::$fg)).fill(Color32::$bg),
-                )
-                .clicked()
-            {
-                *$r = Some(ToolBarResponse::ChangeKind(FieldKind::$size));
-            }
-            $ui.add_space(2.);
-        )*
-    };
-}
 
 pub enum ToolBarResponse {
     ProcessAttach(u32),
@@ -100,57 +83,6 @@ impl ToolBarPanel {
                     ui.add_space(4.);
 
                     self.status_ui(ui, &mut response);
-
-                    ui.add_space(4.);
-                    ui.separator();
-                    ui.add_space(4.);
-
-                    macro_rules! create_add_remove_group {
-                        ($ui:ident, $r:ident, $var:ident, $($item:expr),*) => {
-                            $(
-                                if $ui.button(stringify!($item)).clicked() {
-                                    $r = Some(ToolBarResponse::$var($item));
-                                    $ui.close_menu();
-                                }
-                            )*
-                        };
-                    }
-
-                    ui.menu_button("Add", |ui| {
-                        ui.set_width(64.);
-
-                        ui.vertical_centered_justified(|ui| {
-                            create_add_remove_group!(
-                                ui, response, Add, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096
-                            );
-                        });
-                    })
-                    .response
-                    .on_hover_text("Adds N bytes");
-
-                    ui.menu_button("Remove", |ui| {
-                        ui.set_width(64.);
-
-                        create_add_remove_group!(ui, response, Remove, 1, 2, 4, 16, 64, 256, 1024);
-                    })
-                    .response
-                    .on_hover_text("Removes N fields");
-
-                    ui.menu_button("Insert", |ui| {
-                        ui.set_width(64.);
-
-                        create_add_remove_group!(
-                            ui, response, Insert, 1, 2, 4, 8, 16, 64, 256, 1024
-                        );
-                    })
-                    .response
-                    .on_hover_text("Inserts N bytes");
-
-                    ui.add_space(2.);
-                    ui.separator();
-                    ui.add_space(2.);
-
-                    self.field_change_ui(ui, &mut response);
                 });
             });
 
@@ -272,35 +204,6 @@ impl ToolBarPanel {
         } else {
             ui.label("Status: Detached");
         }
-    }
-
-    fn field_change_ui(&mut self, ui: &mut Ui, response: &mut Option<ToolBarResponse>) {
-        create_change_field_type_group!(ui, response, BLACK, GOLD, Bool);
-
-        ui.separator();
-        ui.add_space(2.);
-
-        create_change_field_type_group!(ui, response, BLACK, LIGHT_GREEN, U8, U16, U32, U64);
-
-        ui.separator();
-        ui.add_space(2.);
-
-        create_change_field_type_group!(ui, response, BLACK, LIGHT_BLUE, I8, I16, I32, I64);
-
-        ui.separator();
-        ui.add_space(2.);
-
-        create_change_field_type_group!(ui, response, BLACK, LIGHT_RED, F32, F64);
-
-        ui.separator();
-        ui.add_space(2.);
-
-        create_change_field_type_group!(ui, response, BLACK, GRAY, Unk8, Unk16, Unk32, Unk64);
-
-        ui.separator();
-        ui.add_space(2.);
-
-        create_change_field_type_group!(ui, response, BLACK, BROWN, Ptr, StrPtr);
     }
 }
 

@@ -24,19 +24,9 @@ impl YClassApp {
             state,
         }
     }
-}
 
-impl App for YClassApp {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
-        ctx.request_repaint_after(Duration::from_millis(100));
-
-        static DPI_INIT: Once = Once::new();
-        DPI_INIT.call_once(|| {
-            let dpi = self.state.borrow().config.dpi.unwrap_or(1.);
-            ctx.set_pixels_per_point(dpi);
-        });
-
-        match self.tool_bar.show(ctx) {
+    fn handle_reponse(&mut self, frame: &mut Frame, response: Option<ToolBarResponse>) {
+        match response {
             Some(ToolBarResponse::Add(n)) => {
                 let state = &mut *self.state.borrow_mut();
 
@@ -221,9 +211,26 @@ impl App for YClassApp {
             }
             None => {}
         }
+    }
+}
+
+impl App for YClassApp {
+    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+        ctx.request_repaint_after(Duration::from_millis(100));
+
+        static DPI_INIT: Once = Once::new();
+        DPI_INIT.call_once(|| {
+            let dpi = self.state.borrow().config.dpi.unwrap_or(1.);
+            ctx.set_pixels_per_point(dpi);
+        });
+
+        let res = self.tool_bar.show(ctx);
+        self.handle_reponse(frame, res);
 
         self.class_list.show(ctx);
-        self.inspector.show(ctx);
+
+        let res = self.inspector.show(ctx);
+        self.handle_reponse(frame, res);
 
         let mut style = (*ctx.style()).clone();
         let saved = style.clone();
