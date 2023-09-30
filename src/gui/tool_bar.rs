@@ -54,7 +54,7 @@ impl ToolBarPanel {
         let style = ctx.style();
         let frame = Frame {
             inner_margin: Margin::same(0.),
-            rounding: Rounding::none(),
+            rounding: Rounding::ZERO,
             fill: style.visuals.window_fill(),
             stroke: style.visuals.window_stroke(),
             ..Default::default()
@@ -65,7 +65,7 @@ impl ToolBarPanel {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 0.;
-                    ui.visuals_mut().widgets.inactive.rounding = Rounding::none();
+                    ui.visuals_mut().widgets.inactive.rounding = Rounding::ZERO;
 
                     ui.menu_button("Project", |ui| self.project_menu(ui));
                     ui.menu_button("Process", |ui| self.process_menu(ui, &mut response));

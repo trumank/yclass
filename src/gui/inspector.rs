@@ -51,7 +51,7 @@ impl InspectorPanel {
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.;
-                ui.visuals_mut().widgets.inactive.rounding = Rounding::none();
+                ui.visuals_mut().widgets.inactive.rounding = Rounding::ZERO;
 
                 macro_rules! create_add_remove_group {
                             ($ui:ident, $r:ident, $var:ident, $($item:expr),*) => {
