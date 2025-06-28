@@ -6,6 +6,7 @@ use crate::{
     state::StateRef,
 };
 use eframe::{egui::Context, epaint::Color32, App, Frame};
+use std::collections::HashSet;
 use std::{sync::Once, time::Duration};
 
 pub struct YClassApp {
@@ -203,6 +204,44 @@ impl YClassApp {
                             state.toasts.error(format!(
                                 "Failed to attach to process.\nPossibly plugin error.\n{e}"
                             ));
+                        }
+                    }
+                } else {
+                    state.toasts.warning("Process is currently in use");
+                }
+            }
+            Some(ToolBarResponse::MinidumpLoad(path)) => {
+                let mut state = self.state.borrow_mut();
+
+                if let Some(mut process) = state
+                    .process
+                    .clone() /* ??? */
+                    .try_write()
+                {
+                    match Process::minidump(&path) {
+                        Ok(proc) => {
+                            frame.set_window_title(&format!(
+                                "YClass - Minidump: {}",
+                                path.file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("Unknown")
+                            ));
+
+                            // Update config with recent minidump
+                            state.config.last_minidump_path = Some(path.clone());
+                            if let Some(recent) = state.config.recent_minidumps.as_mut() {
+                                recent.insert(path);
+                            } else {
+                                state.config.recent_minidumps = Some(HashSet::from_iter([path]));
+                            }
+                            state.config.save();
+
+                            *process = Some(proc);
+                        }
+                        Err(e) => {
+                            state
+                                .toasts
+                                .error(format!("Failed to load minidump.\\n{e}"));
                         }
                     }
                 } else {

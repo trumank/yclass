@@ -25,9 +25,45 @@ impl Drop for ManagedExtension {
 pub enum Process {
     Internal((OwnedProcess, Vec<MemoryRegion>)),
     Managed(ManagedExtension),
+    Minidump { segments: Vec<(u64, Vec<u8>)> },
 }
 
 impl Process {
+    pub fn minidump(path: impl AsRef<std::path::Path>) -> eyre::Result<Self> {
+        let dump = minidump::Minidump::read_path(path)?;
+
+        let mem = dump.get_memory().unwrap();
+
+        let mut segments = vec![];
+        let mut chunk: Option<(&[u8], u64)> = None;
+
+        fn merge_adjacent_slices<'a, T>(a: &'a [T], b: &'a [T]) -> &'a [T] {
+            assert_eq!(
+                unsafe { a.as_ptr().add(a.len()) },
+                b.as_ptr(),
+                "Slices are not adjacent in memory"
+            );
+            unsafe { std::slice::from_raw_parts(a.as_ptr(), a.len() + b.len()) }
+        }
+
+        for mem in mem.by_addr() {
+            let bytes = mem.bytes();
+            if let Some((slice, address)) = chunk {
+                // check if continuous with existing slice
+                if address + slice.len() as u64 == mem.base_address() {
+                    // extend existing slice
+                    chunk = Some((merge_adjacent_slices(slice, bytes), address));
+                } else {
+                    segments.push((address, slice.to_vec()));
+                    chunk = Some((bytes, mem.base_address()));
+                }
+            } else {
+                chunk = Some((bytes, mem.base_address()));
+            }
+        }
+
+        Ok(Self::Minidump { segments })
+    }
     pub fn attach(pid: u32, config: &YClassConfig) -> eyre::Result<Self> {
         let (path, modified) = (
             config
@@ -88,6 +124,16 @@ impl Process {
             // TODO(ItsEthra): Proper error handling maybe?.
             Self::Internal((op, _)) => _ = op.read_buf(address, buf),
             Self::Managed(ext) => _ = (ext.read)(address, buf.as_mut_ptr(), buf.len()),
+            Self::Minidump { segments } => {
+                let address = address as u64;
+                for (addr, mem) in segments {
+                    if (*addr..*addr + mem.len() as u64).contains(&address) {
+                        let base = (address - addr) as usize;
+                        buf.copy_from_slice(&mem[base..base + buf.len()]);
+                        break;
+                    }
+                }
+            }
         };
     }
 
@@ -96,6 +142,7 @@ impl Process {
             // TODO(ItsEthra): Proper error handling maybe?.
             Self::Internal((op, _)) => _ = op.write_buf(address, buf),
             Self::Managed(ext) => _ = (ext.write)(address, buf.as_ptr(), buf.len()),
+            Self::Minidump { .. } => { /* read only */ }
         };
     }
 
@@ -103,6 +150,7 @@ impl Process {
         match self {
             Self::Internal((op, _)) => op.id(),
             Self::Managed(ext) => ext.pid,
+            Self::Minidump { .. } => 0,
         }
     }
 
@@ -112,6 +160,15 @@ impl Process {
                 .iter()
                 .any(|map| map.from <= address && map.to >= address && map.prot.read()),
             Self::Managed(ext) => (ext.can_read)(address),
+            Self::Minidump { segments } => {
+                let address = address as u64;
+                for (addr, mem) in segments {
+                    if (*addr..*addr + mem.len() as u64).contains(&address) {
+                        return true;
+                    }
+                }
+                false
+            }
         }
     }
 
@@ -119,6 +176,7 @@ impl Process {
         match self {
             Self::Internal((op, _)) => op.name().map_err(Into::into),
             Self::Managed(_) => Ok("[MANAGED]".into()),
+            Self::Minidump { .. } => Ok("[minidump]".into()),
         }
     }
 }

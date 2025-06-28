@@ -4,9 +4,11 @@ use std::{collections::HashSet, fs, path::PathBuf};
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct YClassConfig {
     pub last_attached_process_name: Option<String>,
+    pub last_minidump_path: Option<PathBuf>,
 
     pub plugin_path: Option<PathBuf>,
     pub recent_projects: Option<HashSet<PathBuf>>,
+    pub recent_minidumps: Option<HashSet<PathBuf>>,
     pub dpi: Option<f32>,
 }
 

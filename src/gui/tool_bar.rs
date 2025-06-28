@@ -12,6 +12,7 @@ use memflex::external::ProcessIterator;
 
 pub enum ToolBarResponse {
     ProcessAttach(u32),
+    MinidumpLoad(std::path::PathBuf),
     ProcessDetach,
     Add(usize),
     Remove(usize),
@@ -178,6 +179,59 @@ impl ToolBarPanel {
         if shortcut_button(ui, state, "detach_process", "Detach from process") {
             *response = Some(ToolBarResponse::ProcessDetach);
             ui.close_menu();
+        }
+
+        if ui.button("Load minidump").clicked() {
+            if let Some(path) = rfd::FileDialog::new()
+                .set_title("Load minidump")
+                .add_filter("Minidump files", &["dmp", "DMP", "mdmp"])
+                .set_directory(
+                    state
+                        .config
+                        .last_minidump_path
+                        .as_ref()
+                        .and_then(|p| p.parent())
+                        .unwrap_or_else(|| std::path::Path::new(".")),
+                )
+                .pick_file()
+            {
+                *response = Some(ToolBarResponse::MinidumpLoad(path));
+            }
+            ui.close_menu();
+        }
+
+        if !state
+            .config
+            .recent_minidumps
+            .as_ref()
+            .map(|h| h.is_empty())
+            .unwrap_or(true)
+        {
+            ui.menu_button("Load recent minidump...", |ui| {
+                let mut to_load = None;
+                for minidump_path in state.config.recent_minidumps.as_ref().unwrap().iter() {
+                    if let Some(name) = minidump_path.file_name().and_then(|name| name.to_str()) {
+                        if ui.button(name).clicked() {
+                            to_load = Some(minidump_path.clone());
+                        }
+                    }
+                }
+
+                if let Some(path) = to_load {
+                    if path.exists() {
+                        *response = Some(ToolBarResponse::MinidumpLoad(path));
+                        ui.close_menu();
+                    } else {
+                        state
+                            .config
+                            .recent_minidumps
+                            .as_mut()
+                            .unwrap()
+                            .remove(&path);
+                        state.config.save();
+                    }
+                }
+            });
         }
     }
 
