@@ -24,7 +24,7 @@ use config::YClassConfig;
 use eframe::{
     egui::{FontData, FontDefinitions, Key, Modifiers},
     epaint::{FontFamily, FontId},
-    NativeOptions, Theme,
+    NativeOptions,
 };
 use hotkeys::HotkeyManager;
 use state::GlobalState;
@@ -36,10 +36,7 @@ const FID_M: FontId = FontId::monospace(16.);
 fn main() {
     eframe::run_native(
         "YClass",
-        NativeOptions {
-            default_theme: Theme::Dark,
-            ..Default::default()
-        },
+        NativeOptions::default(),
         Box::new(|cc| {
             let config = YClassConfig::load_or_default();
             cc.egui_ctx.set_pixels_per_point(config.dpi.unwrap_or(1.));
@@ -47,7 +44,7 @@ fn main() {
             let mut fonts = FontDefinitions::default();
             fonts.font_data.insert(
                 "roboto-mono".into(),
-                FontData::from_static(include_bytes!("../fonts/RobotoMono-Regular.ttf")),
+                FontData::from_static(include_bytes!("../fonts/RobotoMono-Regular.ttf")).into(),
             );
             fonts
                 .families
@@ -61,12 +58,12 @@ fn main() {
             hotkeys.register("attach_recent", Key::A, Modifiers::ALT | Modifiers::CTRL);
             hotkeys.register("detach_process", Key::D, Modifiers::ALT);
 
-            Box::new(app::YClassApp::new(Box::leak(Box::new(RefCell::new(
-                GlobalState {
+            Ok(Box::new(app::YClassApp::new(Box::leak(Box::new(
+                RefCell::new(GlobalState {
                     config,
                     hotkeys,
                     ..Default::default()
-                },
+                }),
             )))))
         }),
     )

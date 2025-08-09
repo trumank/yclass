@@ -4,7 +4,7 @@ use crate::{
     state::StateRef,
 };
 use eframe::{
-    egui::{Button, Context, Key, ScrollArea, SelectableLabel, SidePanel, TextEdit},
+    egui::{Button, Context, Key, ScrollArea, SidePanel, TextEdit},
     epaint::vec2,
 };
 use std::mem::take;
@@ -146,9 +146,8 @@ impl ClassListPanel {
                         } else {
                             let r = ui.add_sized(
                                 vec2(ui.available_width(), 24.),
-                                SelectableLabel::new(
+                                Button::new(&class.name).selected(
                                     selected.map(|j| class.id() == j).unwrap_or_default(),
-                                    &class.name,
                                 ),
                             );
 
@@ -161,7 +160,7 @@ impl ClassListPanel {
 
                                 ui.vertical_centered_justified(|ui| {
                                     if ui.button("Rename").clicked() {
-                                        ui.close_menu();
+                                        ui.close();
 
                                         self.edit_state = Some(ClassEditState {
                                             new_name: class.name.clone(),
@@ -171,7 +170,7 @@ impl ClassListPanel {
                                     }
 
                                     if ui.button("Delete").clicked() {
-                                        ui.close_menu();
+                                        ui.close();
 
                                         action = Some(RequestedAction::Delete(class.id()));
                                     }

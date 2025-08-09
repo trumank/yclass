@@ -4,10 +4,7 @@ use super::{
 };
 use crate::{address::parse_address, context::InspectionContext, generator::Generator, FID_M};
 use eframe::{
-    egui::{
-        collapsing_header::CollapsingState, popup_below_widget, Id, Label, RichText, Sense,
-        TextFormat, Ui,
-    },
+    egui::{collapsing_header::CollapsingState, Id, Label, Popup, RichText, Sense, TextFormat, Ui},
     epaint::{text::LayoutJob, Color32},
 };
 use fastrand::Rng;
@@ -98,13 +95,11 @@ impl PointerField {
         );
 
         let r = ui.add(Label::new(job).sense(Sense::click()));
-        if r.secondary_clicked() {
-            ui.memory_mut(|m| m.toggle_popup(Id::new(ctx.current_id)));
-        } else if r.clicked() {
+        if r.clicked() {
             ctx.select(self.id);
         }
 
-        popup_below_widget(ui, Id::new(ctx.current_id), &r, |ui| {
+        Popup::context_menu(&r).show(|ui| {
             ui.set_width(80.);
             ui.vertical_centered_justified(|ui| {
                 for cl in ctx.class_list.classes() {
@@ -143,7 +138,7 @@ impl PointerField {
                 selection: ctx.selection,
                 current_container: cid,
                 // Will be immideately reassigned.
-                current_id: Id::null(),
+                current_id: Id::new("null"),
                 process: ctx.process,
                 toasts: ctx.toasts,
                 level_rng: &rng,

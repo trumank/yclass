@@ -4,10 +4,10 @@ use crate::{
 };
 use eframe::{
     egui::{
-        collapsing_header::CollapsingState, Button, CentralPanel, Context, Id, RichText,
-        ScrollArea, Ui,
+        collapsing_header::CollapsingState, scroll_area::ScrollSource, Button, CentralPanel,
+        Context, Id, RichText, ScrollArea, Ui,
     },
-    epaint::{vec2, Color32, FontId, Rounding},
+    epaint::{vec2, Color32, CornerRadius, FontId},
 };
 use fastrand::Rng;
 
@@ -51,14 +51,14 @@ impl InspectorPanel {
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.;
-                ui.visuals_mut().widgets.inactive.rounding = Rounding::ZERO;
+                ui.visuals_mut().widgets.inactive.corner_radius = CornerRadius::ZERO;
 
                 macro_rules! create_add_remove_group {
                             ($ui:ident, $r:ident, $var:ident, $($item:expr),*) => {
                                 $(
                                     if $ui.button(stringify!($item)).clicked() {
                                         $r = Some(super::tool_bar::ToolBarResponse::$var($item));
-                                        $ui.close_menu();
+                                        $ui.close();
                                     }
                                 )*
                             };
@@ -180,7 +180,11 @@ impl InspectorPanel {
         ScrollArea::vertical()
             .auto_shrink([false, true])
             .hscroll(true)
-            .enable_scrolling(self.allow_scroll)
+            .scroll_source(if self.allow_scroll {
+                ScrollSource::ALL
+            } else {
+                ScrollSource::NONE
+            })
             .show(ui, |ui| {
                 match class.fields.iter().fold(None, |r, f| {
                     ctx.current_id = Id::new(rng.u64(..));

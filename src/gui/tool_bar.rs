@@ -5,8 +5,8 @@ use crate::{
     state::{GlobalState, StateRef},
 };
 use eframe::{
-    egui::{style::Margin, Button, Context, Frame, TopBottomPanel, Ui, WidgetText},
-    epaint::Rounding,
+    egui::{Button, Context, Frame, Margin, TopBottomPanel, Ui, WidgetText},
+    epaint::CornerRadius,
 };
 use memflex::external::ProcessIterator;
 
@@ -54,8 +54,8 @@ impl ToolBarPanel {
 
         let style = ctx.style();
         let frame = Frame {
-            inner_margin: Margin::same(0.),
-            rounding: Rounding::ZERO,
+            inner_margin: Margin::same(0),
+            corner_radius: CornerRadius::ZERO,
             fill: style.visuals.window_fill(),
             stroke: style.visuals.window_stroke(),
             ..Default::default()
@@ -66,7 +66,7 @@ impl ToolBarPanel {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 0.;
-                    ui.visuals_mut().widgets.inactive.rounding = Rounding::ZERO;
+                    ui.visuals_mut().widgets.inactive.corner_radius = CornerRadius::ZERO;
 
                     ui.menu_button("Project", |ui| self.project_menu(ui));
                     ui.menu_button("Process", |ui| self.process_menu(ui, &mut response));
@@ -111,12 +111,12 @@ impl ToolBarPanel {
         if ui.button("New project").clicked() {
             state.save_project(None);
             state.class_list = ClassList::default();
-            ui.close_menu();
+            ui.close();
         }
 
         if ui.button("Open project").clicked() {
             state.open_project();
-            ui.close_menu();
+            ui.close();
         }
 
         if !state
@@ -138,7 +138,7 @@ impl ToolBarPanel {
 
                 if let Some(path) = to_open {
                     if state.open_project_path(&path) {
-                        ui.close_menu();
+                        ui.close();
                     } else {
                         state.config.recent_projects.as_mut().unwrap().remove(&path);
                     }
@@ -148,12 +148,12 @@ impl ToolBarPanel {
 
         if ui.button("Save project").clicked() {
             state.save_project(None);
-            ui.close_menu();
+            ui.close();
         }
 
         if ui.button("Save project as").clicked() {
             state.save_project_as();
-            ui.close_menu();
+            ui.close();
         }
     }
 
@@ -164,7 +164,7 @@ impl ToolBarPanel {
 
         if shortcut_button(ui, state, "attach_process", "Attach to process") {
             self.ps_attach_window.toggle();
-            ui.close_menu();
+            ui.close();
         }
 
         // Reattach to last process
@@ -172,13 +172,13 @@ impl ToolBarPanel {
             if shortcut_button(ui, state, "attach_recent", format!("Attach to {name}")) {
                 attach_to_process(state, &name, response);
 
-                ui.close_menu();
+                ui.close();
             }
         }
 
         if shortcut_button(ui, state, "detach_process", "Detach from process") {
             *response = Some(ToolBarResponse::ProcessDetach);
-            ui.close_menu();
+            ui.close();
         }
 
         if ui.button("Load minidump").clicked() {
@@ -197,7 +197,7 @@ impl ToolBarPanel {
             {
                 *response = Some(ToolBarResponse::MinidumpLoad(path));
             }
-            ui.close_menu();
+            ui.close();
         }
 
         if !state
@@ -220,7 +220,7 @@ impl ToolBarPanel {
                 if let Some(path) = to_load {
                     if path.exists() {
                         *response = Some(ToolBarResponse::MinidumpLoad(path));
-                        ui.close_menu();
+                        ui.close();
                     } else {
                         state
                             .config

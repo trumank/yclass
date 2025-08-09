@@ -20,19 +20,22 @@ pub fn display_field_prelude(
         }
 
         if egui_ctx.input(|i| i.key_pressed(Key::C))
-            && egui_ctx.input(|i| i.modifiers.matches(Modifiers::CTRL))
+            && egui_ctx.input(|i| i.modifiers.matches_exact(Modifiers::CTRL))
             && ctx.is_selected(field.id())
         {
-            egui_ctx.output_mut(|o| o.copied_text = format!("{:X}", ctx.address + ctx.offset));
+            egui_ctx.copy_text(format!("{:X}", ctx.address + ctx.offset));
         }
 
         if egui_ctx.input(|i| i.key_pressed(Key::C))
-            && egui_ctx.input(|i| i.modifiers.matches(Modifiers::CTRL | Modifiers::SHIFT))
+            && egui_ctx.input(|i| {
+                i.modifiers
+                    .matches_exact(Modifiers::CTRL | Modifiers::SHIFT)
+            })
             && ctx.is_selected(field.id())
         {
             let mut buf = [0; 8];
             ctx.process.read(ctx.address + ctx.offset, &mut buf[..]);
-            egui_ctx.output_mut(|o| o.copied_text = format!("{:X}", usize::from_ne_bytes(buf)));
+            egui_ctx.copy_text(format!("{:X}", usize::from_ne_bytes(buf)));
         }
 
         tf

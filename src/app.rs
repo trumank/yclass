@@ -5,7 +5,11 @@ use crate::{
     process::Process,
     state::StateRef,
 };
-use eframe::{egui::Context, epaint::Color32, App, Frame};
+use eframe::{
+    egui::{Context, ViewportCommand},
+    epaint::Color32,
+    App, Frame,
+};
 use std::collections::HashSet;
 use std::{sync::Once, time::Duration};
 
@@ -26,7 +30,12 @@ impl YClassApp {
         }
     }
 
-    fn handle_reponse(&mut self, frame: &mut Frame, response: Option<ToolBarResponse>) {
+    fn handle_reponse(
+        &mut self,
+        ctx: &Context,
+        _frame: &mut Frame,
+        response: Option<ToolBarResponse>,
+    ) {
         match response {
             Some(ToolBarResponse::Add(n)) => {
                 let state = &mut *self.state.borrow_mut();
@@ -168,7 +177,7 @@ impl YClassApp {
                     .try_write()
                 {
                     *process = None;
-                    frame.set_window_title("YClass");
+                    ctx.send_viewport_cmd(ViewportCommand::Title("YClass".to_owned()));
                 } else {
                     state.toasts.warning("Process is currently in use");
                 }
@@ -183,7 +192,9 @@ impl YClassApp {
                 {
                     match Process::attach(pid, &state.config) {
                         Ok(proc) => {
-                            frame.set_window_title(&format!("YClass - Attached to {pid}"));
+                            ctx.send_viewport_cmd(ViewportCommand::Title(format!(
+                                "YClass - Attached to {pid}"
+                            )));
                             if let Process::Internal((op, _)) = &proc {
                                 match op.name() {
                                     Ok(name) => {
@@ -220,12 +231,12 @@ impl YClassApp {
                 {
                     match Process::minidump(&path) {
                         Ok(proc) => {
-                            frame.set_window_title(&format!(
+                            ctx.send_viewport_cmd(ViewportCommand::Title(format!(
                                 "YClass - Minidump: {}",
                                 path.file_name()
                                     .and_then(|n| n.to_str())
                                     .unwrap_or("Unknown")
-                            ));
+                            )));
 
                             // Update config with recent minidump
                             state.config.last_minidump_path = Some(path.clone());
@@ -264,12 +275,12 @@ impl App for YClassApp {
         });
 
         let res = self.tool_bar.show(ctx);
-        self.handle_reponse(frame, res);
+        self.handle_reponse(ctx, frame, res);
 
         self.class_list.show(ctx);
 
         let res = self.inspector.show(ctx);
-        self.handle_reponse(frame, res);
+        self.handle_reponse(ctx, frame, res);
 
         let mut style = (*ctx.style()).clone();
         let saved = style.clone();

@@ -54,7 +54,7 @@ impl<T: FromStr + 'static> TextEditBind<T, T::Err> {
     }
 }
 
-impl<T, E> TextBuffer for TextEditBind<T, E> {
+impl<T: 'static, E: 'static> TextBuffer for TextEditBind<T, E> {
     fn is_mutable(&self) -> bool {
         true
     }
@@ -77,5 +77,9 @@ impl<T, E> TextBuffer for TextEditBind<T, E> {
     fn delete_char_range(&mut self, char_range: Range<usize>) {
         self.buf.drain(char_range);
         self.update();
+    }
+
+    fn type_id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
     }
 }
