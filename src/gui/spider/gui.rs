@@ -15,7 +15,7 @@ use eframe::{
     epaint::{vec2, FontId},
 };
 use egui_extras::{Column, TableBuilder};
-use std::{borrow::Cow, iter::repeat, sync::Arc, time::Instant};
+use std::{borrow::Cow, sync::Arc, time::Instant};
 
 enum DisplayMode {
     Normal,
@@ -314,7 +314,7 @@ impl SpiderWindow {
                     row.col(|ui| _ = ui.label(format!("{:X}", result.offset)));
 
                     // Without this, results with shorter offset path look weird.
-                    for _ in repeat("").take(levels - result.parent_offsets.len() - 1) {
+                    for _ in std::iter::repeat_n("", levels - result.parent_offsets.len() - 1) {
                         row.col(|ui| _ = ui.label(""));
                     }
 

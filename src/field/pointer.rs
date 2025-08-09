@@ -8,7 +8,7 @@ use eframe::{
     epaint::{text::LayoutJob, Color32},
 };
 use fastrand::Rng;
-use std::{cell::Cell, mem::transmute};
+use std::cell::Cell;
 
 pub struct PointerField {
     id: FieldId,
@@ -130,7 +130,7 @@ impl PointerField {
 
         let cid = self.class_id.get()?;
         if let Some(class) = ctx.class_list.by_id(cid) {
-            let rng = Rng::with_seed(unsafe { transmute(ctx.current_id) });
+            let rng = Rng::with_seed(ctx.current_id.value());
 
             let mut inner_ctx = InspectionContext {
                 class_list: ctx.class_list,
@@ -138,7 +138,7 @@ impl PointerField {
                 selection: ctx.selection,
                 current_container: cid,
                 // Will be immideately reassigned.
-                current_id: Id::new("null"),
+                current_id: Id::NULL,
                 process: ctx.process,
                 toasts: ctx.toasts,
                 level_rng: &rng,

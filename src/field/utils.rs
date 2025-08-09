@@ -15,7 +15,7 @@ pub fn display_field_prelude(
     job.append(&format!("{:04X}", ctx.offset), 0., {
         let mut tf = create_text_format(ctx.is_selected(field.id()), Color32::KHAKI);
         // Highlight unaligned fields
-        if ctx.offset % 8 != 0 {
+        if !ctx.offset.is_multiple_of(8) {
             tf.underline = Stroke::new(1., Color32::RED);
         }
 

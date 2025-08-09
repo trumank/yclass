@@ -3,6 +3,7 @@
 //! Expected Syntax:
 //! * `[0xAABB]` loads 8 bytes at address `0xAABB`.
 //! * `<module.exe>` loads address of the `module.exe`.
+//!
 //! Allowed operations are would be: `+`, `-`, `*`.
 
 // TODO(ItsEthra): Parse address (with `nom` crate maybe?) to allow special syntax like adding, dereferencing

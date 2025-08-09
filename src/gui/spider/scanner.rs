@@ -79,7 +79,7 @@ fn recursive_first_search(
     counter.fetch_add(1, Ordering::SeqCst);
 
     let start = opts.address
-        + if opts.address % opts.alignment == 0 {
+        + if opts.address.is_multiple_of(opts.alignment) {
             0
         } else {
             opts.alignment - opts.address % opts.alignment
