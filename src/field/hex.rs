@@ -213,6 +213,29 @@ impl<const N: usize> HexField<N> {
         }
     }
 
+    fn ascii_view(&self, ui: &mut Ui, ctx: &mut InspectionContext, buf: &[u8; N]) {
+        let mut job = LayoutJob::default();
+
+        for &byte in buf.iter() {
+            let (color, ch) = if byte.is_ascii_graphic() || byte == b' ' {
+                (Color32::LIGHT_GREEN, char::from(byte))
+            } else {
+                (Color32::DARK_GRAY, '.')
+            };
+
+            job.append(
+                &ch.to_string(),
+                0.,
+                create_text_format(ctx.is_selected(self.id), color),
+            );
+        }
+
+        let r = ui.add(Label::new(job).sense(Sense::click()));
+        if r.clicked() {
+            ctx.select(self.id);
+        }
+    }
+
     fn string_view(&self, ui: &mut Ui, ctx: &mut InspectionContext, buf: &[u8; N]) {
         if N != 8 {
             return;
@@ -317,6 +340,7 @@ impl<const N: usize> Field for HexField<N> {
                 ctx.select(self.id);
             }
 
+            self.ascii_view(ui, ctx, &buf);
             self.int_view(ui, ctx, &buf);
             self.float_view(ui, ctx, &buf);
             self.pointer_view(ui, ctx, &buf, &mut response);
