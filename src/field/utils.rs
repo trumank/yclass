@@ -11,7 +11,14 @@ pub fn display_field_prelude(
     field: &dyn Field,
     ctx: &mut InspectionContext,
     job: &mut LayoutJob,
+    indent: bool,
 ) {
+    // Add indent to match collapsing header arrow width if requested
+    if indent {
+        job.append("", egui_ctx.style().spacing.indent, {
+            create_text_format(false, Color32::TRANSPARENT)
+        });
+    }
     job.append(&format!("{:04X}", ctx.offset), 0., {
         let mut tf = create_text_format(ctx.is_selected(field.id()), Color32::KHAKI);
         // Highlight unaligned fields
