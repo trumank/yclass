@@ -1,4 +1,4 @@
-use crate::config::YClassConfig;
+use crate::{config::YClassConfig, dump::ConcatenatedDumpReader};
 use libloading::Library;
 use memflex::external::{MemoryRegion, OwnedProcess};
 use std::fs;
@@ -26,6 +26,7 @@ pub enum Process {
     Internal((OwnedProcess, Vec<MemoryRegion>)),
     Managed(ManagedExtension),
     Minidump { segments: Vec<(u64, Vec<u8>)> },
+    ConcatenatedDump { reader: ConcatenatedDumpReader },
 }
 
 impl Process {
@@ -63,6 +64,11 @@ impl Process {
         }
 
         Ok(Self::Minidump { segments })
+    }
+
+    pub fn concatenated_dump(path: impl AsRef<std::path::Path>) -> eyre::Result<Self> {
+        let reader = ConcatenatedDumpReader::open(path)?;
+        Ok(Self::ConcatenatedDump { reader })
     }
     pub fn attach(pid: u32, config: &YClassConfig) -> eyre::Result<Self> {
         let (path, modified) = (
@@ -134,6 +140,12 @@ impl Process {
                     }
                 }
             }
+            Self::ConcatenatedDump { reader } => {
+                if let Some(data) = reader.get_memory_slice(address as u64, buf.len()) {
+                    let copy_len = buf.len().min(data.len());
+                    buf[..copy_len].copy_from_slice(&data[..copy_len]);
+                }
+            }
         };
     }
 
@@ -143,6 +155,7 @@ impl Process {
             Self::Internal((op, _)) => _ = op.write_buf(address, buf),
             Self::Managed(ext) => _ = (ext.write)(address, buf.as_ptr(), buf.len()),
             Self::Minidump { .. } => { /* read only */ }
+            Self::ConcatenatedDump { .. } => { /* read only */ }
         };
     }
 
@@ -151,6 +164,7 @@ impl Process {
             Self::Internal((op, _)) => op.id(),
             Self::Managed(ext) => ext.pid,
             Self::Minidump { .. } => 0,
+            Self::ConcatenatedDump { .. } => 0,
         }
     }
 
@@ -169,6 +183,9 @@ impl Process {
                 }
                 false
             }
+            Self::ConcatenatedDump { reader } => {
+                reader.get_memory_slice(address as u64, 1).is_some()
+            }
         }
     }
 
@@ -177,6 +194,7 @@ impl Process {
             Self::Internal((op, _)) => op.name().map_err(Into::into),
             Self::Managed(_) => Ok("[MANAGED]".into()),
             Self::Minidump { .. } => Ok("[minidump]".into()),
+            Self::ConcatenatedDump { .. } => Ok("[concatenated dump]".into()),
         }
     }
 }

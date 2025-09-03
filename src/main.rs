@@ -11,6 +11,7 @@ mod app;
 mod class;
 mod config;
 mod context;
+mod dump;
 mod field;
 mod generator;
 mod gui;

@@ -259,6 +259,44 @@ impl YClassApp {
                     state.toasts.warning("Process is currently in use");
                 }
             }
+            Some(ToolBarResponse::ConcatenatedDumpLoad(path)) => {
+                let mut state = self.state.borrow_mut();
+
+                if let Some(mut process) = state
+                    .process
+                    .clone() /* ??? */
+                    .try_write()
+                {
+                    match Process::concatenated_dump(&path) {
+                        Ok(proc) => {
+                            ctx.send_viewport_cmd(ViewportCommand::Title(format!(
+                                "YClass - Concatenated Dump: {}",
+                                path.file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("Unknown")
+                            )));
+
+                            // Update config with recent dump path
+                            state.config.last_minidump_path = Some(path.clone());
+                            if let Some(recent) = state.config.recent_minidumps.as_mut() {
+                                recent.insert(path);
+                            } else {
+                                state.config.recent_minidumps = Some(HashSet::from_iter([path]));
+                            }
+                            state.config.save();
+
+                            *process = Some(proc);
+                        }
+                        Err(e) => {
+                            state
+                                .toasts
+                                .error(format!("Failed to load concatenated dump.\\n{e}"));
+                        }
+                    }
+                } else {
+                    state.toasts.warning("Process is currently in use");
+                }
+            }
             None => {}
         }
     }

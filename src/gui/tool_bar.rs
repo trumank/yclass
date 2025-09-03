@@ -13,6 +13,7 @@ use memflex::external::ProcessIterator;
 pub enum ToolBarResponse {
     ProcessAttach(u32),
     MinidumpLoad(std::path::PathBuf),
+    ConcatenatedDumpLoad(std::path::PathBuf),
     ProcessDetach,
     Add(usize),
     Remove(usize),
@@ -196,6 +197,25 @@ impl ToolBarPanel {
                 .pick_file()
             {
                 *response = Some(ToolBarResponse::MinidumpLoad(path));
+            }
+            ui.close();
+        }
+
+        if ui.button("Load concatenated dump").clicked() {
+            if let Some(path) = rfd::FileDialog::new()
+                .set_title("Load concatenated dump")
+                .add_filter("Concatenated dump files", &["cdmp", "CDMP"])
+                .set_directory(
+                    state
+                        .config
+                        .last_minidump_path
+                        .as_ref()
+                        .and_then(|p| p.parent())
+                        .unwrap_or_else(|| std::path::Path::new(".")),
+                )
+                .pick_file()
+            {
+                *response = Some(ToolBarResponse::ConcatenatedDumpLoad(path));
             }
             ui.close();
         }
